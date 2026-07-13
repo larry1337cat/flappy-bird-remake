@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#4ec0ca" />
+    <meta name="description" content="Flappy Bird Remake" />
+    <title>Flappy Bird Remake</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="assets/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+    <link rel="preload" as="font" type="font/ttf" href="assets/fonts/Poppins-Bold.ttf" crossorigin />
+    <link rel="preload" as="font" type="font/ttf" href="assets/fonts/Poppins-Medium.ttf" crossorigin />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: #05060d;
+      }
+    </style>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <canvas id="game"></canvas>
+    </div>
+
+    <div id="loading">
+      <div class="loading-logo">FLAPPY BIRD REMAKE</div>
+      <div class="spinner"></div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-label" id="progress-label">0%</div>
+    </div>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

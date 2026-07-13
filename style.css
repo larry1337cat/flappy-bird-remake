@@ -1,0 +1,121 @@
+@font-face {
+  font-family: "GameFont";
+  src: url("assets/fonts/Poppins-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GameFont";
+  src: url("assets/fonts/Poppins-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-display: swap;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #05060d;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#stage {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game {
+  background: #4ec0ca;
+  max-height: 100vh;
+  max-width: 100vw;
+  aspect-ratio: 360 / 640;
+  width: auto;
+  height: 100%;
+  image-rendering: pixelated;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+#game.ready {
+  opacity: 1;
+}
+
+@media (min-aspect-ratio: 360/640) {
+  #game {
+    height: 100vh;
+    width: auto;
+  }
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: radial-gradient(circle at 50% 30%, #6fd1da 0%, #05060d 75%);
+  z-index: 10;
+  transition: opacity 0.4s ease;
+}
+
+#loading.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-logo {
+  font-family: "GameFont", "Helvetica Neue", Arial, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #eaf1ff;
+  text-align: center;
+  max-width: 260px;
+  line-height: 1.3;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(122, 162, 255, 0.2);
+  border-top-color: #7aa2ff;
+  animation: spin 0.9s linear infinite;
+}
+
+.progress-track {
+  width: 220px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(122, 162, 255, 0.15);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #7aa2ff, #43e0ff);
+  transition: width 0.15s ease;
+}
+
+.progress-label {
+  font-family: monospace;
+  font-size: 13px;
+  color: #9ac;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
