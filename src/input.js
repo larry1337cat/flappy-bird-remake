@@ -23,6 +23,7 @@ export class Input {
       if (e.repeat) return;
       if (e.code === "Space" || e.code === "ArrowUp" || e.code === "Enter") {
         e.preventDefault();
+        this.pointer = null;
         flap();
       }
     });
