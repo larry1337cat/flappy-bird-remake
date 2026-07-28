@@ -1,6 +1,8 @@
 import { images } from "./assetLoader.js";
 import { CONFIG } from "./config.js";
 
+const V = CONFIG.PIPE_VARIANTS;
+
 export class Bird {
   constructor(x, y) {
     this.x = x;
@@ -78,24 +80,33 @@ export class Bird {
 }
 
 export class Pipe {
-  constructor(gapTop, gap, oscAmplitude, oscSpeedMult, narrow) {
-    this.reset(gapTop, gap, oscAmplitude, oscSpeedMult, narrow);
+  constructor(gapTop, gap, oscAmplitude, oscSpeedMult, variant, variantData) {
+    this.reset(gapTop, gap, oscAmplitude, oscSpeedMult, variant, variantData);
   }
 
-  reset(gapTop, gap, oscAmplitude, oscSpeedMult, narrow = false) {
+  reset(gapTop, gap, oscAmplitude, oscSpeedMult, variant = V.NORMAL, variantData = {}) {
     this.x = CONFIG.WIDTH;
     this.baseGapTop = gapTop;
     this.gap = gap;
     this.gapTop = gapTop;
     this.gapBottom = gapTop + gap;
     this.scored = false;
-    this.narrow = narrow;
+    this.variant = variant;
+    this.variantData = variantData;
+
     this.oscillateAmplitude = oscAmplitude;
-    this.oscillatePhase = Math.random() * Math.PI * 2;
-    this.oscillateSpeed =
-      (CONFIG.PIPE_OSCILLATE_SPEED_MIN +
-        Math.random() * (CONFIG.PIPE_OSCILLATE_SPEED_MAX - CONFIG.PIPE_OSCILLATE_SPEED_MIN)) *
-      oscSpeedMult;
+    this.oscillatePhase = variantData.phase ?? (Math.random() * Math.PI * 2);
+
+    const baseSpeed =
+      CONFIG.PIPE_OSCILLATE_SPEED_MIN +
+      Math.random() * (CONFIG.PIPE_OSCILLATE_SPEED_MAX - CONFIG.PIPE_OSCILLATE_SPEED_MIN);
+
+    if (variant === V.ZIGZAG) {
+      this.oscillateSpeed = Math.min(baseSpeed * oscSpeedMult * 2.0, 0.0024);
+    } else {
+      this.oscillateSpeed = baseSpeed * oscSpeedMult;
+    }
+
     return this;
   }
 
@@ -107,8 +118,13 @@ export class Pipe {
     return this.x > -CONFIG.PIPE_W && this.x < CONFIG.WIDTH;
   }
 
+  get narrow() {
+    return this.variant === V.NORMAL && !!this.variantData.narrow;
+  }
+
   update(dt, speed) {
     this.x -= speed * (dt / 16.67);
+
     this.oscillatePhase += this.oscillateSpeed * dt;
     const offset = Math.sin(this.oscillatePhase) * this.oscillateAmplitude;
     this.gapTop = this.baseGapTop + offset;
@@ -122,10 +138,8 @@ export class Pipe {
   }
 
   draw(ctx) {
-    const down = images.pipeDown;
-    const up = images.pipeUp;
-    if (down) ctx.drawImage(down, this.x, this.topY, CONFIG.PIPE_W, CONFIG.PIPE_H);
-    if (up) ctx.drawImage(up, this.x, this.gapBottom, CONFIG.PIPE_W, CONFIG.PIPE_H);
+    this._drawPipeImages(ctx);
+
     if (this.narrow) {
       ctx.save();
       ctx.fillStyle = "rgba(255, 90, 40, 0.85)";
@@ -133,6 +147,29 @@ export class Pipe {
       ctx.fillRect(this.x, this.gapBottom, CONFIG.PIPE_W, 4);
       ctx.restore();
     }
+
+    if (this.variant === V.ZIGZAG) {
+      ctx.save();
+      ctx.fillStyle = "rgba(180, 80, 255, 0.75)";
+      ctx.fillRect(this.x, this.gapTop - 4, CONFIG.PIPE_W, 4);
+      ctx.fillRect(this.x, this.gapBottom, CONFIG.PIPE_W, 4);
+      ctx.restore();
+    }
+
+    if (this.variant === V.STAIRCASE) {
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 200, 0, 0.8)";
+      ctx.fillRect(this.x, this.gapTop - 4, CONFIG.PIPE_W, 4);
+      ctx.fillRect(this.x, this.gapBottom, CONFIG.PIPE_W, 4);
+      ctx.restore();
+    }
+  }
+
+  _drawPipeImages(ctx) {
+    const down = images.pipeDown;
+    const up = images.pipeUp;
+    if (down) ctx.drawImage(down, this.x, this.topY, CONFIG.PIPE_W, CONFIG.PIPE_H);
+    if (up) ctx.drawImage(up, this.x, this.gapBottom, CONFIG.PIPE_W, CONFIG.PIPE_H);
   }
 }
 
@@ -141,10 +178,10 @@ export class PipePool {
     this.free = [];
   }
 
-  acquire(gapTop, gap, oscAmplitude, oscSpeedMult, narrow = false) {
+  acquire(gapTop, gap, oscAmplitude, oscSpeedMult, variant = V.NORMAL, variantData = {}) {
     const pipe = this.free.pop();
-    if (pipe) return pipe.reset(gapTop, gap, oscAmplitude, oscSpeedMult, narrow);
-    return new Pipe(gapTop, gap, oscAmplitude, oscSpeedMult, narrow);
+    if (pipe) return pipe.reset(gapTop, gap, oscAmplitude, oscSpeedMult, variant, variantData);
+    return new Pipe(gapTop, gap, oscAmplitude, oscSpeedMult, variant, variantData);
   }
 
   release(pipe) {
@@ -152,8 +189,9 @@ export class PipePool {
   }
 }
 
-export function randomGapTop(oscAmplitude) {
-  const min = CONFIG.PIPE_GAP_MIN_Y + oscAmplitude;
-  const max = CONFIG.PIPE_GAP_MAX_Y - oscAmplitude;
+export function randomGapTop(amplitude) {
+  const min = CONFIG.PIPE_GAP_MIN_Y + amplitude;
+  const max = CONFIG.PIPE_GAP_MAX_Y - amplitude;
+  if (min >= max) return (CONFIG.PIPE_GAP_MIN_Y + CONFIG.PIPE_GAP_MAX_Y) / 2;
   return min + Math.random() * (max - min);
 }
