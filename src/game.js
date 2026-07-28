@@ -81,13 +81,21 @@ export class Game {
     this.windPhase = WIND_PHASE.REST;
     this.windDirection = 1;
     this.windForce = 0;
-    this.windTimer = CONFIG.WIND.GUST_INTERVAL_MIN + Math.random() * (CONFIG.WIND.GUST_INTERVAL_MAX - CONFIG.WIND.GUST_INTERVAL_MIN);
+    const [gustMin, gustMax] = this._gustIntervalRange();
+    this.windTimer = gustMin + Math.random() * (gustMax - gustMin);
     this.windParticleTimer = 0;
     this.windParticles = [];
     this.quakeTimer = CONFIG.EXTREME.QUAKE_INTERVAL_MIN + Math.random() * (CONFIG.EXTREME.QUAKE_INTERVAL_MAX - CONFIG.EXTREME.QUAKE_INTERVAL_MIN);
     this.quakeActive = false;
     this.quakeTime = 0;
     this.lastVariant = V.NORMAL;
+    this.lastSingleSide = "bottom";
+    this.variantBag = [];
+  }
+
+  _gustIntervalRange() {
+    if (this.mode === MODES.EXTREME) return [CONFIG.EXTREME.GUST_INTERVAL_MIN, CONFIG.EXTREME.GUST_INTERVAL_MAX];
+    return [CONFIG.WIND.GUST_INTERVAL_MIN, CONFIG.WIND.GUST_INTERVAL_MAX];
   }
 
   loop = (now) => {
@@ -126,16 +134,23 @@ export class Game {
 
   _canSpawnNarrow() {
     const N = CONFIG.NARROW_PIPE;
-    if (this.mode !== MODES.HARD) return false;
+    if (this.mode !== MODES.HARD && this.mode !== MODES.EXTREME) return false;
     if (this.score < N.SCORE_THRESHOLD) return false;
     if (this.score - this.lastNarrowScore < N.COOLDOWN_SCORE) return false;
     return Math.random() < N.CHANCE;
   }
 
   _pickExtremeVariant() {
-    const pool = [V.NORMAL, V.NORMAL, V.STAIRCASE, V.STAIRCASE, V.ZIGZAG];
-    const filtered = pool.filter((v) => v !== this.lastVariant);
-    const chosen = filtered[Math.floor(Math.random() * filtered.length)];
+    if (this.variantBag.length === 0) {
+      const bag = [V.NORMAL, V.STAIRCASE, V.ZIGZAG, V.SINGLE];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      if (bag[0] === this.lastVariant) [bag[0], bag[1]] = [bag[1], bag[0]];
+      this.variantBag = bag;
+    }
+    const chosen = this.variantBag.shift();
     this.lastVariant = chosen;
     return chosen;
   }
@@ -186,8 +201,27 @@ export class Game {
       return;
     }
 
+    if (variant === V.SINGLE) {
+      this._spawnSinglePipe();
+      return;
+    }
+
+    let gap = d.gap;
+    let narrow = false;
+    if (variant === V.NORMAL && this._canSpawnNarrow()) {
+      gap = Math.max(60, gap * CONFIG.NARROW_PIPE.GAP_MULT);
+      narrow = true;
+      this.lastNarrowScore = this.score;
+    }
     const gapTop = randomGapTop(d.oscAmplitude);
-    const pipe = this.pipePool.acquire(gapTop, d.gap, d.oscAmplitude, d.oscSpeedMult, variant, {});
+    const pipe = this.pipePool.acquire(gapTop, gap, d.oscAmplitude, d.oscSpeedMult, variant, { narrow });
+    this.pipes.push(pipe);
+  }
+
+  _spawnSinglePipe() {
+    const side = this.lastSingleSide === "top" ? "bottom" : "top";
+    this.lastSingleSide = side;
+    const pipe = this.pipePool.acquire(0, 0, 0, 0, V.SINGLE, { side });
     this.pipes.push(pipe);
   }
 
@@ -213,7 +247,8 @@ export class Game {
       haptics.gust();
     } else {
       this.windPhase = WIND_PHASE.REST;
-      this.windTimer = W.GUST_INTERVAL_MIN + Math.random() * (W.GUST_INTERVAL_MAX - W.GUST_INTERVAL_MIN);
+      const [gustMin, gustMax] = this._gustIntervalRange();
+      this.windTimer = gustMin + Math.random() * (gustMax - gustMin);
     }
   }
 
@@ -617,7 +652,7 @@ export class Game {
   }
 
   _drawWind(ctx) {
-    if (this.mode !== MODES.HARD) return;
+    if (this.mode !== MODES.HARD && this.mode !== MODES.EXTREME) return;
 
     ctx.save();
     ctx.strokeStyle = "rgba(255,255,255,0.55)";
