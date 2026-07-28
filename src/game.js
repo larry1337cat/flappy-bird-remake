@@ -37,6 +37,7 @@ export class Game {
     this.changeModeRect = { x: CONFIG.WIDTH / 2 - 100, y: CONFIG.HEIGHT / 2 + 70, w: 200, h: 40 };
     this.langToggleRect = { x: CONFIG.WIDTH - 74, y: 16, w: 58, h: 34 };
     this.muteRect = { x: 16, y: 16, w: 40, h: 40 };
+    this.githubRect = { x: CONFIG.WIDTH / 2 - 66, y: 16, w: 132, h: 34 };
     this.medalGradients = new Map();
     this.pressFx = null;
     this.lastTime = performance.now();
@@ -336,6 +337,12 @@ export class Game {
         return;
       }
 
+      if (this._hitButton(this.githubRect, p)) {
+        this.pressFx = { rect: this.githubRect, time: this.lastTime };
+        window.open(CONFIG.SOURCE_REPO_URL, "_blank", "noopener,noreferrer");
+        return;
+      }
+
       const hit = this.menuButtons.find((b) => this._hitButton(b, p));
       if (hit) {
         sound.unlock();
@@ -555,6 +562,47 @@ export class Game {
     ctx.restore();
   }
 
+  _drawExternalLinkIcon(cx, cy, s) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(-s, -s * 0.2);
+    ctx.lineTo(-s, s);
+    ctx.lineTo(s * 0.2, s);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.1, -s);
+    ctx.lineTo(s, -s);
+    ctx.lineTo(s, s * 0.1);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.3, s * 0.3);
+    ctx.lineTo(s * 0.7, -s * 0.7);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  _drawGithubBadge() {
+    const ctx = this.ctx;
+    const rect = this.githubRect;
+    const scale = this._pressScale(rect);
+    const cx = rect.x + rect.w / 2;
+    const cy = rect.y + rect.h / 2;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.translate(-cx, -cy);
+    drawRoundedPanel(ctx, rect.x, rect.y, rect.w, rect.h, 8, "rgba(0,0,0,0.4)", "rgba(255,255,255,0.7)", 2);
+    this._drawExternalLinkIcon(rect.x + 20, cy, 7);
+    drawText(ctx, CONFIG.SOURCE_AUTHOR, rect.x + 36, cy, { size: 13, color: "#fff", align: "left" });
+    ctx.restore();
+  }
+
   _drawMuteButton() {
     const ctx = this.ctx;
     const rect = this.muteRect;
@@ -616,6 +664,7 @@ export class Game {
     drawTextOutlined(ctx, strings.chooseDifficulty, CONFIG.WIDTH / 2, this.menuButtons[0].y - 40, { size: 22 });
     this.menuButtons.forEach((b) => this._drawButton(b, strings.modeLabels[b.mode], this.mode === b.mode));
     this._drawLangToggle();
+    this._drawGithubBadge();
   }
 
   _drawTiled(img, w, h, scrollX, y) {
