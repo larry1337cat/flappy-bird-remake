@@ -9,6 +9,8 @@ import { Bird, PipePool, randomGapTop } from "./entities.js";
 import { drawText, drawTextOutlined, drawStar, drawRoundedPanel } from "./ui.js";
 import { sound } from "./sound.js";
 
+const V = CONFIG.PIPE_VARIANTS;
+
 const STATE = {
   MENU: "MENU",
   READY: "READY",
@@ -82,6 +84,10 @@ export class Game {
     this.windTimer = CONFIG.WIND.GUST_INTERVAL_MIN + Math.random() * (CONFIG.WIND.GUST_INTERVAL_MAX - CONFIG.WIND.GUST_INTERVAL_MIN);
     this.windParticleTimer = 0;
     this.windParticles = [];
+    this.quakeTimer = CONFIG.EXTREME.QUAKE_INTERVAL_MIN + Math.random() * (CONFIG.EXTREME.QUAKE_INTERVAL_MAX - CONFIG.EXTREME.QUAKE_INTERVAL_MIN);
+    this.quakeActive = false;
+    this.quakeTime = 0;
+    this.lastVariant = V.NORMAL;
   }
 
   loop = (now) => {
@@ -126,7 +132,19 @@ export class Game {
     return Math.random() < N.CHANCE;
   }
 
+  _pickExtremeVariant() {
+    const pool = [V.NORMAL, V.NORMAL, V.STAIRCASE, V.STAIRCASE, V.ZIGZAG];
+    const filtered = pool.filter((v) => v !== this.lastVariant);
+    const chosen = filtered[Math.floor(Math.random() * filtered.length)];
+    this.lastVariant = chosen;
+    return chosen;
+  }
+
   _spawnPipe(d) {
+    if (this.mode === MODES.EXTREME) {
+      this._spawnExtremePipe(d);
+      return;
+    }
     let gap = d.gap;
     let narrow = false;
     if (this._canSpawnNarrow()) {
@@ -135,7 +153,41 @@ export class Game {
       this.lastNarrowScore = this.score;
     }
     const gapTop = randomGapTop(d.oscAmplitude);
-    const pipe = this.pipePool.acquire(gapTop, gap, d.oscAmplitude, d.oscSpeedMult, narrow);
+    const pipe = this.pipePool.acquire(gapTop, gap, d.oscAmplitude, d.oscSpeedMult, V.NORMAL, { narrow });
+    this.pipes.push(pipe);
+  }
+
+  _spawnExtremePipe(d) {
+    const variant = this._pickExtremeVariant();
+
+    if (variant === V.STAIRCASE) {
+      const minOverlap = 45;
+      const maxStep = Math.max(15, d.gap - minOverlap);
+      const stepAmt = Math.min(30 + Math.random() * 30, maxStep);
+      const stepDir = Math.random() < 0.5 ? 1 : -1;
+      const spacing = CONFIG.PIPE_W + 38;
+
+      const gapTop1 = randomGapTop(d.oscAmplitude);
+      const phase1 = Math.random() * Math.PI * 2;
+
+      const gapTop2 = Math.min(
+        Math.max(CONFIG.PIPE_GAP_MIN_Y + d.oscAmplitude, gapTop1 + stepDir * stepAmt),
+        CONFIG.PIPE_GAP_MAX_Y - d.oscAmplitude
+      );
+      const phase2 = phase1 + Math.PI * 0.5 * stepDir;
+
+      const p1 = this.pipePool.acquire(gapTop1, d.gap, d.oscAmplitude, d.oscSpeedMult, V.STAIRCASE, { phase: phase1 });
+      p1.x = CONFIG.WIDTH;
+      this.pipes.push(p1);
+
+      const p2 = this.pipePool.acquire(gapTop2, d.gap, d.oscAmplitude, d.oscSpeedMult, V.STAIRCASE, { phase: phase2 });
+      p2.x = CONFIG.WIDTH + spacing;
+      this.pipes.push(p2);
+      return;
+    }
+
+    const gapTop = randomGapTop(d.oscAmplitude);
+    const pipe = this.pipePool.acquire(gapTop, d.gap, d.oscAmplitude, d.oscSpeedMult, variant, {});
     this.pipes.push(pipe);
   }
 
@@ -185,6 +237,25 @@ export class Game {
       const p = this.windParticles[i];
       p.x += p.speed * t;
       if (p.x < -40 || p.x > CONFIG.WIDTH + 40) this.windParticles.splice(i, 1);
+    }
+  }
+
+  _updateQuake(dt) {
+    const X = CONFIG.EXTREME;
+    if (this.quakeActive) {
+      this.quakeTime -= dt;
+      if (this.quakeTime <= 0) {
+        this.quakeActive = false;
+        this.quakeTimer = X.QUAKE_INTERVAL_MIN + Math.random() * (X.QUAKE_INTERVAL_MAX - X.QUAKE_INTERVAL_MIN);
+      }
+      return;
+    }
+    this.quakeTimer -= dt;
+    if (this.quakeTimer <= 0) {
+      this.quakeActive = true;
+      this.quakeTime = X.QUAKE_DURATION;
+      this.shakeTime = X.QUAKE_DURATION;
+      this.shakeMagnitude = X.QUAKE_MAGNITUDE;
     }
   }
 
@@ -272,7 +343,8 @@ export class Game {
     this.bird.updatePhysics(dt);
     this.bird.updateAnim(dt);
 
-    if (this.mode === MODES.HARD) this._updateWind(dt);
+    if (this.mode === MODES.HARD || this.mode === MODES.EXTREME) this._updateWind(dt);
+    if (this.mode === MODES.EXTREME) this._updateQuake(dt);
     this.bird.updateDrift(dt);
     this._updateWindParticles(dt);
 
