@@ -1,6 +1,7 @@
 import { CONFIG } from "./config.js";
 import { preloadAll } from "./assetLoader.js";
 import { Game } from "./game.js";
+import { watchForUpdates } from "./updateNotifier.js";
 
 const canvas = document.getElementById("game");
 canvas.width = CONFIG.WIDTH;
@@ -37,8 +38,4 @@ async function boot() {
 
 boot();
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch((e) => console.warn("SW dang ky that bai:", e));
-  });
-}
+window.addEventListener("load", watchForUpdates);
