@@ -28,6 +28,8 @@ const STRINGS = {
     tapToRestart: "Chạm để chơi lại",
     wind: "GIÓ",
     otherLangLabel: "EN",
+    updateAvailable: "Đã có bản cập nhật mới",
+    reloadNow: "Tải lại",
   },
   [LANG.EN]: {
     modeLabels: {
@@ -51,6 +53,8 @@ const STRINGS = {
     tapToRestart: "Tap to restart",
     wind: "WIND",
     otherLangLabel: "VI",
+    updateAvailable: "A new update is available",
+    reloadNow: "Reload",
   },
 };
 
