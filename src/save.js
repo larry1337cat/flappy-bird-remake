@@ -1,7 +1,7 @@
 import { CONFIG } from "./config.js";
 
 const DEFAULT_SAVE = {
-  bestByMode: { EASY: 0, NORMAL: 0, HARD: 0 },
+  bestByMode: { EASY: 0, NORMAL: 0, HARD: 0, EXTREME: 0 },
   mode: "NORMAL",
   lang: "vi",
   muted: false,
@@ -12,7 +12,7 @@ function resolveBestByMode(parsed) {
     return parsed.bestByMode;
   }
   const legacyBest = typeof (parsed && parsed.best) === "number" ? parsed.best : 0;
-  return { EASY: 0, NORMAL: legacyBest, HARD: 0 };
+  return { EASY: 0, NORMAL: legacyBest, HARD: 0, EXTREME: 0 };
 }
 
 export function loadSave() {
