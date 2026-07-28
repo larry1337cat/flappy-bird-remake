@@ -121,6 +121,9 @@ export const CONFIG = {
   SCOREBOARD_H: 280,
 
   RESTART_DELAY: 500,
+
+  SOURCE_REPO_URL: "https://github.com/larry1337cat/my-dsc-bot",
+  SOURCE_AUTHOR: "larry1337cat",
 };
 
 CONFIG.GROUND_Y = CONFIG.HEIGHT - CONFIG.LAND_H;
