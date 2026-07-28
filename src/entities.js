@@ -127,6 +127,23 @@ export class Pipe {
 
     this.oscillatePhase += this.oscillateSpeed * dt;
     const offset = Math.sin(this.oscillatePhase) * this.oscillateAmplitude;
+
+    if (this.variant === V.SINGLE) {
+      const S = CONFIG.SINGLE_PIPE;
+      const t = Math.max(0, Math.min(1, ((CONFIG.WIDTH - this.x) / CONFIG.WIDTH) * S.RATE));
+      const startLen = CONFIG.GROUND_Y * S.START_FRACTION;
+      const endLen = CONFIG.GROUND_Y * S.END_FRACTION;
+      const len = startLen + t * (endLen - startLen);
+      if (this.variantData.side === "top") {
+        this.gapTop = len;
+        this.gapBottom = Infinity;
+      } else {
+        this.gapTop = -Infinity;
+        this.gapBottom = CONFIG.GROUND_Y - len;
+      }
+      return;
+    }
+
     this.gapTop = this.baseGapTop + offset;
     this.gapBottom = this.gapTop + this.gap;
   }
@@ -168,6 +185,16 @@ export class Pipe {
   _drawPipeImages(ctx) {
     const down = images.pipeDown;
     const up = images.pipeUp;
+
+    if (this.variant === V.SINGLE) {
+      if (this.variantData.side === "top") {
+        if (down) ctx.drawImage(down, this.x, this.topY, CONFIG.PIPE_W, CONFIG.PIPE_H);
+      } else if (up) {
+        ctx.drawImage(up, this.x, this.gapBottom, CONFIG.PIPE_W, CONFIG.PIPE_H);
+      }
+      return;
+    }
+
     if (down) ctx.drawImage(down, this.x, this.topY, CONFIG.PIPE_W, CONFIG.PIPE_H);
     if (up) ctx.drawImage(up, this.x, this.gapBottom, CONFIG.PIPE_W, CONFIG.PIPE_H);
   }
