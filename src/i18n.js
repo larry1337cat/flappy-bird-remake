@@ -11,11 +11,7 @@ const STRINGS = {
       [MODES.EASY]: "DỄ",
       [MODES.NORMAL]: "THƯỜNG",
       [MODES.HARD]: "KHÓ",
-    },
-    modeDescriptions: {
-      [MODES.EASY]: "Tốc độ & khe ống cố định",
-      [MODES.NORMAL]: "Ống di chuyển, khó dần theo điểm",
-      [MODES.HARD]: "+ Gió giật ngang & ống hẹp bất ngờ",
+      [MODES.EXTREME]: "SIÊU KHÓ",
     },
     medalLabels: {
       bronze: "Đồng",
@@ -38,11 +34,7 @@ const STRINGS = {
       [MODES.EASY]: "EASY",
       [MODES.NORMAL]: "NORMAL",
       [MODES.HARD]: "HARD",
-    },
-    modeDescriptions: {
-      [MODES.EASY]: "Fixed speed & gap",
-      [MODES.NORMAL]: "Moving pipes, ramps up with score",
-      [MODES.HARD]: "+ Side gusts & surprise narrow pipes",
+      [MODES.EXTREME]: "EXTREME",
     },
     medalLabels: {
       bronze: "Bronze",
