@@ -1,4 +1,4 @@
-const CACHE_NAME = "flappy-bird-remake-cache-v3";
+const CACHE_NAME = "flappy-bird-remake-cache-v4";
 
 const PRECACHE_URLS = [
   "./",
@@ -17,6 +17,7 @@ const PRECACHE_URLS = [
   "./src/save.js",
   "./src/sound.js",
   "./src/ui.js",
+  "./src/updateNotifier.js",
   "./assets/images/sky.png",
   "./assets/images/land.png",
   "./assets/images/pipe_up.png",
@@ -33,12 +34,11 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)));
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
