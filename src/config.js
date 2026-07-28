@@ -122,7 +122,7 @@ export const CONFIG = {
 
   RESTART_DELAY: 500,
 
-  SOURCE_REPO_URL: "https://github.com/larry1337cat/my-dsc-bot",
+  SOURCE_REPO_URL: "https://github.com/larry1337-cat/flappy-bird-remake",
   SOURCE_AUTHOR: "larry1337cat",
 };
 
