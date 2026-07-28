@@ -119,3 +119,32 @@ html, body {
     transform: rotate(360deg);
   }
 }
+
+#update-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #10131f;
+  border: 1px solid rgba(122, 162, 255, 0.35);
+  color: #eaf1ff;
+  font-family: "GameFont", "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  z-index: 20;
+}
+
+#update-banner button {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  background: #7aa2ff;
+  color: #05060d;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+}
