@@ -92,6 +92,7 @@ export const MODES = {
   EASY: "EASY",
   NORMAL: "NORMAL",
   HARD: "HARD",
+  EXTREME: "EXTREME",
 };
 
 export function medalForScore(score) {
