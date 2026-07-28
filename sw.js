@@ -1,4 +1,4 @@
-const CACHE_NAME = "flappy-bird-remake-cache-v4";
+const CACHE_NAME = "flappy-bird-remake-cache-v5";
 
 const PRECACHE_URLS = [
   "./",
@@ -50,16 +50,19 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+function isNavigationRequest(request) {
+  return request.mode === "navigate" || request.headers.get("accept")?.includes("text/html");
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
+  if (isNavigationRequest(event.request)) {
+    event.respondWith(
+      fetch(event.request)
         .then((response) => {
           if (response.ok) {
             const clone = response.clone();
@@ -67,7 +70,21 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      });
     })
   );
 });
