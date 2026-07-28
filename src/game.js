@@ -48,12 +48,13 @@ export class Game {
 
   _buildMenuButtons() {
     const w = 240;
-    const h = 64;
-    const gap = 14;
-    const totalH = 3 * h + 2 * gap;
+    const h = 54;
+    const gap = 12;
+    const modes = [MODES.EASY, MODES.NORMAL, MODES.HARD, MODES.EXTREME];
+    const totalH = modes.length * h + (modes.length - 1) * gap;
     const startY = CONFIG.HEIGHT / 2 - totalH / 2 + 30;
     const x = CONFIG.WIDTH / 2 - w / 2;
-    return [MODES.EASY, MODES.NORMAL, MODES.HARD].map((mode, i) => ({
+    return modes.map((mode, i) => ({
       mode,
       x,
       y: startY + i * (h + gap),
@@ -399,7 +400,7 @@ export class Game {
     return 1 - Math.sin(t * Math.PI) * 0.06;
   }
 
-  _drawButton(rect, label, active, desc) {
+  _drawButton(rect, label, active) {
     const ctx = this.ctx;
     const scale = this._pressScale(rect);
     const cx = rect.x + rect.w / 2;
@@ -422,15 +423,7 @@ export class Game {
       active ? 3 : 2
     );
 
-    const labelColor = active ? "#3a2a00" : "#fff";
-    const descColor = active ? "rgba(58,42,0,0.75)" : "rgba(255,255,255,0.7)";
-
-    if (desc) {
-      drawText(ctx, label, cx, cy - 11, { size: 18, color: labelColor });
-      drawText(ctx, desc, cx, cy + 14, { size: 11, color: descColor, weight: "normal" });
-    } else {
-      drawText(ctx, label, cx, cy, { size: 18, color: labelColor });
-    }
+    drawText(ctx, label, cx, cy, { size: 18, color: active ? "#3a2a00" : "#fff" });
 
     if (active) {
       drawText(ctx, "✓", rect.x + rect.w - 18, rect.y + 16, { size: 16, color: "#3a2a00" });
@@ -514,9 +507,7 @@ export class Game {
     const strings = tr(this.lang);
     this._drawDim(0.45);
     drawTextOutlined(ctx, strings.chooseDifficulty, CONFIG.WIDTH / 2, this.menuButtons[0].y - 40, { size: 22 });
-    this.menuButtons.forEach((b) =>
-      this._drawButton(b, strings.modeLabels[b.mode], this.mode === b.mode, strings.modeDescriptions[b.mode])
-    );
+    this.menuButtons.forEach((b) => this._drawButton(b, strings.modeLabels[b.mode], this.mode === b.mode));
     this._drawLangToggle();
   }
 
