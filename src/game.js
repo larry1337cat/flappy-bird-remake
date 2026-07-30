@@ -89,6 +89,9 @@ export class Game {
     this.quakeTimer = CONFIG.EXTREME.QUAKE_INTERVAL_MIN + Math.random() * (CONFIG.EXTREME.QUAKE_INTERVAL_MAX - CONFIG.EXTREME.QUAKE_INTERVAL_MIN);
     this.quakeActive = false;
     this.quakeTime = 0;
+    this.fogTimer = CONFIG.EXTREME.FOG_INTERVAL_MIN + Math.random() * (CONFIG.EXTREME.FOG_INTERVAL_MAX - CONFIG.EXTREME.FOG_INTERVAL_MIN);
+    this.fogActive = false;
+    this.fogTime = 0;
     this.lastVariant = V.NORMAL;
     this.lastSingleSide = "bottom";
     this.variantBag = [];
@@ -295,6 +298,23 @@ export class Game {
     }
   }
 
+  _updateFog(dt) {
+    const X = CONFIG.EXTREME;
+    if (this.fogActive) {
+      this.fogTime -= dt;
+      if (this.fogTime <= 0) {
+        this.fogActive = false;
+        this.fogTimer = X.FOG_INTERVAL_MIN + Math.random() * (X.FOG_INTERVAL_MAX - X.FOG_INTERVAL_MIN);
+      }
+      return;
+    }
+    this.fogTimer -= dt;
+    if (this.fogTimer <= 0) {
+      this.fogActive = true;
+      this.fogTime = X.FOG_DURATION;
+    }
+  }
+
   _scrollBackdrop(dt) {
     const t = dt / 16.67;
     this.skyScrollX = (this.skyScrollX + CONFIG.SKY_SPEED * t) % CONFIG.SKY_W;
@@ -386,7 +406,10 @@ export class Game {
     this.bird.updateAnim(dt);
 
     if (this.mode === MODES.HARD || this.mode === MODES.EXTREME) this._updateWind(dt);
-    if (this.mode === MODES.EXTREME) this._updateQuake(dt);
+    if (this.mode === MODES.EXTREME) {
+      this._updateQuake(dt);
+      this._updateFog(dt);
+    }
     this.bird.updateDrift(dt);
     this._updateWindParticles(dt);
 
@@ -691,13 +714,51 @@ export class Game {
       ctx.fillRect(0, CONFIG.GROUND_Y, CONFIG.WIDTH, CONFIG.LAND_H);
     }
 
+    this._drawFog(ctx);
+
     this.bird.draw(ctx);
     this._drawPopups(ctx);
     this._drawWind(ctx);
+    this._drawFogIndicator(ctx);
 
     if (this.state === STATE.PLAYING || this.state === STATE.DYING) {
       drawTextOutlined(ctx, String(this.score), CONFIG.WIDTH / 2, 60, { size: 40 });
     }
+  }
+
+  _drawFog(ctx) {
+    if (this.mode !== MODES.EXTREME || !this.fogActive) return;
+    const X = CONFIG.EXTREME;
+    const progress = 1 - this.fogTime / X.FOG_DURATION;
+    const alpha = Math.sin(progress * Math.PI) * X.FOG_MAX_ALPHA;
+    ctx.save();
+    ctx.fillStyle = `rgba(225,235,240,${alpha})`;
+    ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    ctx.restore();
+  }
+
+  _drawFogIndicator(ctx) {
+    if (this.mode !== MODES.EXTREME || !this.fogActive) return;
+    const X = CONFIG.EXTREME;
+    const progress = 1 - this.fogTime / X.FOG_DURATION;
+    const alpha = Math.sin(progress * Math.PI);
+    const x = CONFIG.WIDTH - 50;
+    const y = 66;
+
+    ctx.save();
+    ctx.globalAlpha = 0.85 * alpha;
+    ctx.strokeStyle = "#ffe066";
+    ctx.lineWidth = 3;
+    ctx.translate(x, y);
+    [-10, 0, 10].forEach((dy) => {
+      ctx.beginPath();
+      ctx.moveTo(-26, dy);
+      ctx.lineTo(26, dy);
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    drawTextOutlined(ctx, tr(this.lang).fog, x, y + 24, { size: 13, color: "#ffe066" });
   }
 
   _drawWind(ctx) {
