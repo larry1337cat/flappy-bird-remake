@@ -719,7 +719,7 @@ export class Game {
 
     const isWarning = this.windPhase === WIND_PHASE.WARNING;
     const mag = Math.min(1, Math.abs(this.windForce) / CONFIG.WIND.FORCE_MAX);
-    const arrowX = CONFIG.WIDTH / 2;
+    const arrowX = CONFIG.WIDTH - 50;
     const arrowY = 26;
     const len = 18 + mag * 22;
     const warnAlpha = isWarning ? 0.25 + 0.55 * (1 - Math.max(0, this.windTimer) / CONFIG.WIND.WARNING_MS) : 0.85;
