@@ -273,7 +273,12 @@ export class Game {
     const centerY = gapTop + d.gap / 2;
     const ratio = X.CLOSE_MIN_RATIO_MIN + Math.random() * (X.CLOSE_MIN_RATIO_MAX - X.CLOSE_MIN_RATIO_MIN);
     const minGap = d.gap * ratio;
-    const pipe = this.pipePool.acquire(centerY, d.gap, 0, 0, V.CLOSE, { targetGap: d.gap, minGap, closeTime: 0 });
+    const pipe = this.pipePool.acquire(centerY, d.gap, 0, 0, V.CLOSE, {
+      targetGap: d.gap,
+      startGap: X.CLOSE_START_GAP,
+      minGap,
+      closeTime: 0,
+    });
     this.pipes.push(pipe);
   }
 
