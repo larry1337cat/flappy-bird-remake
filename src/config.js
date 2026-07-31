@@ -106,6 +106,11 @@ export const CONFIG = {
     DOOR_OPEN_MS: 1050,
     DOOR_SCORE_COOLDOWN: 6,
     DOOR_CHANCE: 0.25,
+    CLOSE_MS: 1250,
+    CLOSE_MIN_RATIO_MIN: 0.6,
+    CLOSE_MIN_RATIO_MAX: 0.8,
+    CLOSE_SCORE_COOLDOWN: 6,
+    CLOSE_CHANCE: 0.2,
   },
 
   SINGLE_PIPE: {
@@ -120,6 +125,7 @@ export const CONFIG = {
     ZIGZAG: "ZIGZAG",
     SINGLE: "SINGLE",
     DOOR: "DOOR",
+    CLOSE: "CLOSE",
   },
 
   MEDAL_THRESHOLDS: {
