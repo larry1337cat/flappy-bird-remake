@@ -105,6 +105,7 @@ export class Game {
     this.playTime = 0;
     this.doorSpawned = false;
     this.lastDoorScore = -CONFIG.EXTREME.DOOR_SCORE_COOLDOWN;
+    this.lastCloseScore = -CONFIG.EXTREME.CLOSE_SCORE_COOLDOWN;
   }
 
   _gustIntervalRange() {
@@ -194,6 +195,12 @@ export class Game {
       return;
     }
 
+    if (this._canSpawnClose()) {
+      this.lastCloseScore = this.score;
+      this._spawnClosePipe(d);
+      return;
+    }
+
     const variant = this._pickExtremeVariant();
 
     if (variant === V.STAIRCASE) {
@@ -246,10 +253,27 @@ export class Game {
     return Math.random() < X.DOOR_CHANCE;
   }
 
+  _canSpawnClose() {
+    const X = CONFIG.EXTREME;
+    if (this.playTime <= X.DOOR_WINDOW_MS) return false;
+    if (this.score - this.lastCloseScore < X.CLOSE_SCORE_COOLDOWN) return false;
+    return Math.random() < X.CLOSE_CHANCE;
+  }
+
   _spawnDoorPipe(d) {
     const gapTop = randomGapTop(0);
     const centerY = gapTop + d.gap / 2;
     const pipe = this.pipePool.acquire(centerY, 0, 0, 0, V.DOOR, { targetGap: d.gap, openTime: 0 });
+    this.pipes.push(pipe);
+  }
+
+  _spawnClosePipe(d) {
+    const X = CONFIG.EXTREME;
+    const gapTop = randomGapTop(0);
+    const centerY = gapTop + d.gap / 2;
+    const ratio = X.CLOSE_MIN_RATIO_MIN + Math.random() * (X.CLOSE_MIN_RATIO_MAX - X.CLOSE_MIN_RATIO_MIN);
+    const minGap = d.gap * ratio;
+    const pipe = this.pipePool.acquire(centerY, d.gap, 0, 0, V.CLOSE, { targetGap: d.gap, minGap, closeTime: 0 });
     this.pipes.push(pipe);
   }
 
