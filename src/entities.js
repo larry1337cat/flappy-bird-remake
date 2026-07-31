@@ -158,7 +158,7 @@ export class Pipe {
       const X = CONFIG.EXTREME;
       this.variantData.closeTime = (this.variantData.closeTime || 0) + dt;
       const t = Math.min(1, this.variantData.closeTime / X.CLOSE_MS);
-      const currentGap = this.variantData.targetGap - t * (this.variantData.targetGap - this.variantData.minGap);
+      const currentGap = this.variantData.startGap - t * (this.variantData.startGap - this.variantData.minGap);
       this.gapTop = this.baseGapTop - currentGap / 2;
       this.gapBottom = this.baseGapTop + currentGap / 2;
       return;
