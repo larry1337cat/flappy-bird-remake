@@ -92,6 +92,13 @@ export class Game {
     this.fogTimer = CONFIG.EXTREME.FOG_INTERVAL_MIN + Math.random() * (CONFIG.EXTREME.FOG_INTERVAL_MAX - CONFIG.EXTREME.FOG_INTERVAL_MIN);
     this.fogActive = false;
     this.fogTime = 0;
+    this.stormTimer = CONFIG.EXTREME.STORM_INTERVAL_MIN + Math.random() * (CONFIG.EXTREME.STORM_INTERVAL_MAX - CONFIG.EXTREME.STORM_INTERVAL_MIN);
+    this.stormActive = false;
+    this.stormTime = 0;
+    this.rainParticles = [];
+    this.rainParticleTimer = 0;
+    this.lightningTimer = 0;
+    this.lightningFlash = 0;
     this.lastVariant = V.NORMAL;
     this.lastSingleSide = "bottom";
     this.variantBag = [];
@@ -315,6 +322,64 @@ export class Game {
     }
   }
 
+  _updateStorm(dt) {
+    const X = CONFIG.EXTREME;
+    if (this.stormActive) {
+      this.stormTime -= dt;
+      if (this.stormTime <= 0) {
+        this.stormActive = false;
+        this.stormTimer = X.STORM_INTERVAL_MIN + Math.random() * (X.STORM_INTERVAL_MAX - X.STORM_INTERVAL_MIN);
+      }
+      return;
+    }
+    this.stormTimer -= dt;
+    if (this.stormTimer <= 0) {
+      this.stormActive = true;
+      this.stormTime = X.STORM_DURATION;
+      this.lightningTimer = 0;
+      if (!this.quakeActive) this.quakeTimer = Math.min(this.quakeTimer, X.STORM_SYNC_MS);
+      if (!this.fogActive) this.fogTimer = Math.min(this.fogTimer, X.STORM_SYNC_MS);
+      if (this.windPhase === WIND_PHASE.REST) this.windTimer = Math.min(this.windTimer, X.STORM_SYNC_MS);
+    }
+  }
+
+  _spawnRain(dt) {
+    const X = CONFIG.EXTREME;
+    this.rainParticleTimer -= dt;
+    if (this.rainParticleTimer > 0) return;
+    this.rainParticleTimer = X.RAIN_SPAWN_MS;
+    for (let i = 0; i < X.RAIN_PARTICLE_COUNT; i++) {
+      this.rainParticles.push({
+        x: Math.random() * CONFIG.WIDTH,
+        y: -10,
+        len: 10 + Math.random() * 12,
+        speed: 7 + Math.random() * 3,
+        drift: (this.windDirection || 1) * (0.6 + Math.random() * 0.8),
+      });
+    }
+  }
+
+  _updateRain(dt) {
+    const t = dt / 16.67;
+    if (this.stormActive) this._spawnRain(dt);
+    for (let i = this.rainParticles.length - 1; i >= 0; i--) {
+      const p = this.rainParticles[i];
+      p.y += p.speed * t;
+      p.x += p.drift * t;
+      if (p.y > CONFIG.HEIGHT) this.rainParticles.splice(i, 1);
+    }
+  }
+
+  _updateLightning(dt) {
+    const X = CONFIG.EXTREME;
+    if (this.lightningFlash > 0) this.lightningFlash = Math.max(0, this.lightningFlash - dt);
+    if (!this.stormActive) return;
+    this.lightningTimer -= dt;
+    if (this.lightningTimer > 0) return;
+    this.lightningTimer = X.LIGHTNING_MIN_MS + Math.random() * (X.LIGHTNING_MAX_MS - X.LIGHTNING_MIN_MS);
+    if (Math.random() < X.LIGHTNING_CHANCE) this.lightningFlash = X.LIGHTNING_FLASH_MS;
+  }
+
   _scrollBackdrop(dt) {
     const t = dt / 16.67;
     this.skyScrollX = (this.skyScrollX + CONFIG.SKY_SPEED * t) % CONFIG.SKY_W;
@@ -409,9 +474,12 @@ export class Game {
     if (this.mode === MODES.EXTREME) {
       this._updateQuake(dt);
       this._updateFog(dt);
+      this._updateStorm(dt);
+      this._updateLightning(dt);
     }
     this.bird.updateDrift(dt);
     this._updateWindParticles(dt);
+    this._updateRain(dt);
 
     const d = this._difficulty();
 
@@ -515,10 +583,20 @@ export class Game {
     }
     this._drawScene();
     ctx.restore();
+    this._drawLightningFlash(ctx);
     if (this.state === STATE.MENU) this._drawMenu();
     if (this.state === STATE.READY) this._drawReady();
     if (this.state === STATE.GAMEOVER) this._drawGameover();
     this._drawMuteButton();
+  }
+
+  _drawLightningFlash(ctx) {
+    if (this.lightningFlash <= 0) return;
+    const alpha = (this.lightningFlash / CONFIG.EXTREME.LIGHTNING_FLASH_MS) * 0.55;
+    ctx.save();
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    ctx.restore();
   }
 
   _drawDim(alpha) {
@@ -715,6 +793,7 @@ export class Game {
     }
 
     this._drawFog(ctx);
+    this._drawRain(ctx);
 
     this.bird.draw(ctx);
     this._drawPopups(ctx);
@@ -734,6 +813,20 @@ export class Game {
     ctx.save();
     ctx.fillStyle = `rgba(225,235,240,${alpha})`;
     ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    ctx.restore();
+  }
+
+  _drawRain(ctx) {
+    if (this.rainParticles.length === 0) return;
+    ctx.save();
+    ctx.strokeStyle = "rgba(180,210,255,0.5)";
+    ctx.lineWidth = 2;
+    this.rainParticles.forEach((p) => {
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.drift * 2, p.y - p.len);
+      ctx.stroke();
+    });
     ctx.restore();
   }
 
