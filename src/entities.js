@@ -144,6 +144,16 @@ export class Pipe {
       return;
     }
 
+    if (this.variant === V.DOOR) {
+      const X = CONFIG.EXTREME;
+      this.variantData.openTime = (this.variantData.openTime || 0) + dt;
+      const t = Math.min(1, this.variantData.openTime / X.DOOR_OPEN_MS);
+      const currentGap = t * this.variantData.targetGap;
+      this.gapTop = this.baseGapTop - currentGap / 2;
+      this.gapBottom = this.baseGapTop + currentGap / 2;
+      return;
+    }
+
     this.gapTop = this.baseGapTop + offset;
     this.gapBottom = this.gapTop + this.gap;
   }
