@@ -102,6 +102,9 @@ export class Game {
     this.lastVariant = V.NORMAL;
     this.lastSingleSide = "bottom";
     this.variantBag = [];
+    this.playTime = 0;
+    this.doorSpawned = false;
+    this.lastDoorScore = -CONFIG.EXTREME.DOOR_SCORE_COOLDOWN;
   }
 
   _gustIntervalRange() {
@@ -184,6 +187,13 @@ export class Game {
   }
 
   _spawnExtremePipe(d) {
+    if (this._canSpawnDoor()) {
+      this.doorSpawned = true;
+      this.lastDoorScore = this.score;
+      this._spawnDoorPipe(d);
+      return;
+    }
+
     const variant = this._pickExtremeVariant();
 
     if (variant === V.STAIRCASE) {
@@ -226,6 +236,20 @@ export class Game {
     }
     const gapTop = randomGapTop(d.oscAmplitude);
     const pipe = this.pipePool.acquire(gapTop, gap, d.oscAmplitude, d.oscSpeedMult, variant, { narrow });
+    this.pipes.push(pipe);
+  }
+
+  _canSpawnDoor() {
+    const X = CONFIG.EXTREME;
+    if (!this.doorSpawned) return this.playTime <= X.DOOR_WINDOW_MS;
+    if (this.score - this.lastDoorScore < X.DOOR_SCORE_COOLDOWN) return false;
+    return Math.random() < X.DOOR_CHANCE;
+  }
+
+  _spawnDoorPipe(d) {
+    const gapTop = randomGapTop(0);
+    const centerY = gapTop + d.gap / 2;
+    const pipe = this.pipePool.acquire(centerY, 0, 0, 0, V.DOOR, { targetGap: d.gap, openTime: 0 });
     this.pipes.push(pipe);
   }
 
@@ -461,6 +485,7 @@ export class Game {
 
   _updatePlaying(dt) {
     this._scrollBackdrop(dt);
+    this.playTime += dt;
 
     if (this._consumeMuteTap()) return;
     if (this.input.consumeFlap()) {
