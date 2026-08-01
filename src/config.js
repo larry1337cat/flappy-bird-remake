@@ -121,10 +121,10 @@ export const CONFIG = {
 
   METEOR: {
     SIZE: 72,
-    SPEED_MIN: 1.9,
-    SPEED_MAX: 2.8,
-    INTERVAL_MIN: 2600,
-    INTERVAL_MAX: 4400,
+    SPEED_MIN: 1.0,
+    SPEED_MAX: 1.5,
+    INTERVAL_MIN: 1800,
+    INTERVAL_MAX: 5200,
     ANIM_MS: 70,
     HITBOX: { X_FRAC: 0.32, Y_FRAC: 0.09, W_FRAC: 0.36, H_FRAC: 0.55 },
   },
