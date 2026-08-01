@@ -31,6 +31,11 @@ const STRINGS = {
     otherLangLabel: "EN",
     updateAvailable: "Đã có bản cập nhật mới",
     reloadNow: "Tải lại",
+    settings: "CÀI ĐẶT",
+    sound: "ÂM THANH",
+    soundOn: "BẬT",
+    soundOff: "TẮT",
+    birdSkin: "MÀU CHIM",
   },
   [LANG.EN]: {
     modeLabels: {
@@ -57,6 +62,11 @@ const STRINGS = {
     otherLangLabel: "VI",
     updateAvailable: "A new update is available",
     reloadNow: "Reload",
+    settings: "SETTINGS",
+    sound: "SOUND",
+    soundOn: "ON",
+    soundOff: "OFF",
+    birdSkin: "BIRD SKIN",
   },
 };
 
