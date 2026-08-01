@@ -544,6 +544,7 @@ export class Game {
       const hit = this.menuButtons.find((b) => this._hitButton(b, p));
       if (hit) {
         sound.unlock();
+        sound.swoosh();
         this.pressFx = { rect: hit, time: this.lastTime };
         this.mode = hit.mode;
         this.save.mode = hit.mode;
@@ -646,6 +647,7 @@ export class Game {
   }
 
   _enterGameOver() {
+    sound.die();
     const prevBest = this.save.bestByMode[this.mode];
     this.isNewBest = this.score > prevBest;
     if (this.isNewBest) {
