@@ -6,6 +6,7 @@ const DEFAULT_SAVE = {
   lang: "vi",
   muted: false,
   skin: "yellow",
+  theme: "day",
 };
 
 function resolveBestByMode(parsed) {
