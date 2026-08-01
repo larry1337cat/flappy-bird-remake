@@ -169,6 +169,11 @@ CONFIG.SKINS = {
   blue: ["birdBlueDown", "birdBlueMid", "birdBlueUp", "birdBlueMid"],
 };
 
+CONFIG.THEMES = {
+  day: "#4ec0ca",
+  night: "#008793",
+};
+
 export const MODES = {
   EASY: "EASY",
   NORMAL: "NORMAL",
@@ -203,4 +208,5 @@ export const IMAGE_MANIFEST = {
   meteor1: "images/Meteor1.png",
   meteor2: "images/Meteor2.png",
   meteor3: "images/Meteor3.png",
+  nightBackground: "images/background-night.png",
 };
