@@ -119,6 +119,16 @@ export const CONFIG = {
     RATE: 0.7,
   },
 
+  METEOR: {
+    SIZE: 72,
+    SPEED_MIN: 1.9,
+    SPEED_MAX: 2.8,
+    INTERVAL_MIN: 2600,
+    INTERVAL_MAX: 4400,
+    ANIM_MS: 70,
+    HITBOX: { X_FRAC: 0.32, Y_FRAC: 0.09, W_FRAC: 0.36, H_FRAC: 0.55 },
+  },
+
   PIPE_VARIANTS: {
     NORMAL: "NORMAL",
     STAIRCASE: "STAIRCASE",
@@ -190,4 +200,7 @@ export const IMAGE_MANIFEST = {
   birdBlueMid: "images/bird_blue_mid.png",
   birdBlueUp: "images/bird_blue_up.png",
   scoreboard: "images/scoreboard.png",
+  meteor1: "images/meteor1.png",
+  meteor2: "images/meteor2.png",
+  meteor3: "images/meteor3.png",
 };
