@@ -133,6 +133,8 @@ export class Game {
     this.doorSpawned = false;
     this.lastDoorScore = -CONFIG.EXTREME.DOOR_SCORE_COOLDOWN;
     this.lastCloseScore = -CONFIG.EXTREME.CLOSE_SCORE_COOLDOWN;
+    this.meteors = [];
+    this.meteorTimer = this._meteorInterval();
   }
 
   _gustIntervalRange() {
@@ -327,6 +329,59 @@ export class Game {
     this.lastSingleSide = side;
     const pipe = this.pipePool.acquire(0, 0, 0, 0, V.SINGLE, { side });
     this.pipes.push(pipe);
+  }
+
+  _meteorInterval() {
+    const M = CONFIG.METEOR;
+    return M.INTERVAL_MIN + Math.random() * (M.INTERVAL_MAX - M.INTERVAL_MIN);
+  }
+
+  _spawnMeteor() {
+    const M = CONFIG.METEOR;
+    const speed = M.SPEED_MIN + Math.random() * (M.SPEED_MAX - M.SPEED_MIN);
+    const y = -M.SIZE - Math.random() * 60;
+    this.meteors.push({
+      x: CONFIG.WIDTH + M.SIZE,
+      y,
+      vx: -speed,
+      vy: speed * 1.5,
+      frameIndex: 0,
+      animTimer: 0,
+    });
+  }
+
+  _updateMeteors(dt) {
+    const M = CONFIG.METEOR;
+    this.meteorTimer -= dt;
+    if (this.meteorTimer <= 0) {
+      this._spawnMeteor();
+      this.meteorTimer = this._meteorInterval();
+    }
+
+    const t = dt / 16.67;
+    for (let i = this.meteors.length - 1; i >= 0; i--) {
+      const m = this.meteors[i];
+      m.x += m.vx * t;
+      m.y += m.vy * t;
+      m.animTimer += dt;
+      if (m.animTimer >= M.ANIM_MS) {
+        m.animTimer = 0;
+        m.frameIndex = (m.frameIndex + 1) % 3;
+      }
+      if (m.x < -M.SIZE * 2 || m.x > CONFIG.WIDTH + M.SIZE * 2 || m.y > CONFIG.GROUND_Y + M.SIZE) {
+        this.meteors.splice(i, 1);
+      }
+    }
+  }
+
+  _meteorCollidesWith(m, bird) {
+    const M = CONFIG.METEOR;
+    const H = M.HITBOX;
+    const hbX = m.x + M.SIZE * H.X_FRAC;
+    const hbY = m.y + M.SIZE * H.Y_FRAC;
+    const hbW = M.SIZE * H.W_FRAC;
+    const hbH = M.SIZE * H.H_FRAC;
+    return bird.x + bird.w > hbX && bird.x < hbX + hbW && bird.y + bird.h > hbY && bird.y < hbY + hbH;
   }
 
   _updateWind(dt) {
@@ -589,6 +644,7 @@ export class Game {
       this._updateFog(dt);
       this._updateStorm(dt);
       this._updateLightning(dt);
+      this._updateMeteors(dt);
     }
     this.bird.updateDrift(dt);
     this._updateWindParticles(dt);
@@ -623,6 +679,8 @@ export class Game {
       if (!hitPipe && p.collidesWith(this.bird)) hitPipe = true;
     }
 
+    const hitMeteor = this.mode === MODES.EXTREME && this.meteors.some((m) => this._meteorCollidesWith(m, this.bird));
+
     const hitGround = this.bird.y + this.bird.h >= CONFIG.GROUND_Y;
     if (hitGround) {
       this.bird.y = CONFIG.GROUND_Y - this.bird.h;
@@ -630,7 +688,7 @@ export class Game {
       sound.hit();
       haptics.hit();
       this._enterGameOver();
-    } else if (hitPipe) {
+    } else if (hitPipe || hitMeteor) {
       this._triggerShake();
       sound.hit();
       haptics.hit();
@@ -1009,6 +1067,7 @@ export class Game {
     if (images.sky) this._drawTiled(images.sky, CONFIG.SKY_W, CONFIG.SKY_H, this.skyScrollX, CONFIG.HEIGHT - CONFIG.LAND_H - CONFIG.SKY_H);
 
     this.pipes.forEach((p) => p.draw(ctx));
+    this._drawMeteors(ctx);
 
     if (images.land) this._drawTiled(images.land, CONFIG.LAND_W, CONFIG.LAND_H, this.landScrollX, CONFIG.GROUND_Y);
     else {
@@ -1027,6 +1086,23 @@ export class Game {
     if (this.state === STATE.PLAYING || this.state === STATE.DYING) {
       drawTextOutlined(ctx, String(this.score), CONFIG.WIDTH / 2, 60, { size: 40 });
     }
+  }
+
+  _drawMeteors(ctx) {
+    const M = CONFIG.METEOR;
+    const frames = ["meteor1", "meteor2", "meteor3"];
+    this.meteors.forEach((m) => {
+      const img = images[frames[m.frameIndex]];
+      if (!img) return;
+      const cx = m.x + M.SIZE / 2;
+      const cy = m.y + M.SIZE / 2;
+      const angle = Math.atan2(m.vy, m.vx) - Math.PI / 2;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      ctx.drawImage(img, -M.SIZE / 2, -M.SIZE / 2, M.SIZE, M.SIZE);
+      ctx.restore();
+    });
   }
 
   _drawFog(ctx) {
