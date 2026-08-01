@@ -33,6 +33,7 @@ export class Game {
     this.mode = MODES[this.save.mode] ? this.save.mode : MODES.NORMAL;
     this.lang = resolveLang(this.save.lang);
     this.skin = CONFIG.SKINS[this.save.skin] ? this.save.skin : "yellow";
+    this.theme = CONFIG.THEMES[this.save.theme] ? this.save.theme : "day";
     sound.setMuted(this.save.muted === true);
     this.menuButtons = this._buildMenuButtons();
     this.changeModeRect = { x: CONFIG.WIDTH / 2 - 100, y: CONFIG.HEIGHT / 2 + 70, w: 200, h: 40 };
@@ -71,26 +72,49 @@ export class Game {
 
   _buildSettingsLayout() {
     const panelW = 280;
-    const panelH = 300;
+    const labelToContentGap = 20;
+    const sectionGap = 28;
+
+    const soundLabelY = 70;
+    const soundToggleY = soundLabelY + labelToContentGap;
+    const soundToggleBottom = soundToggleY + 44;
+
+    const skinLabelY = soundToggleBottom + sectionGap;
+    const skinY = skinLabelY + labelToContentGap;
+    const swatchSize = 70;
+    const skinBottom = skinY + swatchSize;
+
+    const themeLabelY = skinBottom + sectionGap;
+    const themeToggleY = themeLabelY + labelToContentGap;
+    const themeToggleBottom = themeToggleY + 44;
+
+    const panelH = themeToggleBottom + 32;
     const panel = { x: CONFIG.WIDTH / 2 - panelW / 2, y: CONFIG.HEIGHT / 2 - panelH / 2, w: panelW, h: panelH };
     const close = { x: panel.x + panelW - 40, y: panel.y + 12, w: 28, h: 28 };
-    const soundToggle = { x: panel.x + panelW / 2 - 70, y: panel.y + 74, w: 140, h: 44 };
+    const soundToggle = { x: panel.x + panelW / 2 - 70, y: panel.y + soundToggleY, w: 140, h: 44 };
 
     const skinIds = Object.keys(CONFIG.SKINS);
-    const swatchSize = 70;
     const swatchGap = 14;
     const totalW = skinIds.length * swatchSize + (skinIds.length - 1) * swatchGap;
     const startX = panel.x + (panelW - totalW) / 2;
-    const skinY = panel.y + 176;
     const skins = skinIds.map((skin, i) => ({
       skin,
       x: startX + i * (swatchSize + swatchGap),
-      y: skinY,
+      y: panel.y + skinY,
       w: swatchSize,
       h: swatchSize,
     }));
 
-    return { panel, close, soundToggle, skins };
+    const themeToggle = { x: panel.x + panelW / 2 - 70, y: panel.y + themeToggleY, w: 140, h: 44 };
+
+    return {
+      panel,
+      close,
+      soundToggle,
+      skins,
+      themeToggle,
+      labels: { sound: panel.y + soundLabelY, skin: panel.y + skinLabelY, theme: panel.y + themeLabelY },
+    };
   }
 
   _reset() {
@@ -151,7 +175,8 @@ export class Game {
   };
 
   update(dt) {
-    if (this.input.flapQueued && this._hitButton(this.settingsRect, this.input.pointer)) {
+    const canOpenSettings = this.state !== STATE.PLAYING && this.state !== STATE.DYING;
+    if (canOpenSettings && this.input.flapQueued && this._hitButton(this.settingsRect, this.input.pointer)) {
       this.input.consumeFlap();
       this.settingsOpen = !this.settingsOpen;
       if (this.settingsOpen) sound.unlock();
@@ -542,7 +567,7 @@ export class Game {
   _updateSettingsOverlay() {
     if (!this.input.consumeFlap()) return;
     const p = this.input.pointer;
-    const { panel, close, soundToggle, skins } = this.settingsLayout;
+    const { panel, close, soundToggle, skins, themeToggle } = this.settingsLayout;
 
     if (this._hitButton(close, p)) {
       this.settingsOpen = false;
@@ -555,6 +580,10 @@ export class Game {
     const hitSkin = skins.find((s) => this._hitButton(s, p));
     if (hitSkin) {
       this._selectSkin(hitSkin.skin);
+      return;
+    }
+    if (this._hitButton(themeToggle, p)) {
+      this._toggleTheme();
       return;
     }
     if (!this._hitButton(panel, p)) this.settingsOpen = false;
@@ -574,6 +603,13 @@ export class Game {
     this.bird.frames = CONFIG.SKINS[skinId];
     this.save.skin = skinId;
     writeSave(this.save);
+  }
+
+  _toggleTheme() {
+    this.theme = this.theme === "day" ? "night" : "day";
+    this.save.theme = this.theme;
+    writeSave(this.save);
+    this.pressFx = { rect: this.settingsLayout.themeToggle, time: this.lastTime };
   }
 
   _updateMenu(dt) {
@@ -759,7 +795,7 @@ export class Game {
     if (this.state === STATE.MENU) this._drawMenu();
     if (this.state === STATE.READY) this._drawReady();
     if (this.state === STATE.GAMEOVER) this._drawGameover();
-    this._drawSettingsButton();
+    if (this.state !== STATE.PLAYING && this.state !== STATE.DYING) this._drawSettingsButton();
     if (this.settingsOpen) this._drawSettingsPanel();
   }
 
@@ -924,18 +960,21 @@ export class Game {
   _drawSettingsPanel() {
     const ctx = this.ctx;
     const strings = tr(this.lang);
-    const { panel, close, soundToggle, skins } = this.settingsLayout;
+    const { panel, close, soundToggle, skins, themeToggle, labels } = this.settingsLayout;
 
     this._drawDim(0.55);
     drawRoundedPanel(ctx, panel.x, panel.y, panel.w, panel.h, 16, "rgba(20,24,40,0.95)", "rgba(255,255,255,0.7)", 2);
     drawTextOutlined(ctx, strings.settings, panel.x + panel.w / 2, panel.y + 32, { size: 20 });
     this._drawCloseButton(close);
 
-    drawText(ctx, strings.sound, panel.x + panel.w / 2, panel.y + 70, { size: 14, color: "#cfd8e3" });
+    drawText(ctx, strings.sound, panel.x + panel.w / 2, labels.sound, { size: 14, color: "#cfd8e3" });
     this._drawSoundToggle(soundToggle, strings);
 
-    drawText(ctx, strings.birdSkin, panel.x + panel.w / 2, panel.y + 150, { size: 14, color: "#cfd8e3" });
+    drawText(ctx, strings.birdSkin, panel.x + panel.w / 2, labels.skin, { size: 14, color: "#cfd8e3" });
     skins.forEach((s) => this._drawSkinSwatch(s));
+
+    drawText(ctx, strings.theme, panel.x + panel.w / 2, labels.theme, { size: 14, color: "#cfd8e3" });
+    this._drawThemeToggle(themeToggle, strings);
   }
 
   _drawCloseButton(rect) {
@@ -1003,6 +1042,72 @@ export class Game {
     }
   }
 
+  _drawThemeToggle(rect, strings) {
+    const ctx = this.ctx;
+    const scale = this._pressScale(rect);
+    const cx = rect.x + rect.w / 2;
+    const cy = rect.y + rect.h / 2;
+    const isNight = this.theme === "night";
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.translate(-cx, -cy);
+    drawRoundedPanel(
+      ctx,
+      rect.x,
+      rect.y,
+      rect.w,
+      rect.h,
+      10,
+      isNight ? "rgba(20,30,60,0.92)" : "rgba(255,224,102,0.92)",
+      "rgba(255,255,255,0.7)",
+      2
+    );
+    this._drawThemeIcon(cx - 30, cy, isNight);
+    drawText(ctx, isNight ? strings.themeNight : strings.themeDay, cx + 16, cy, {
+      size: 14,
+      color: isNight ? "#fff" : "#3a2a00",
+    });
+    ctx.restore();
+  }
+
+  _drawThemeIcon(cx, cy, isNight) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = "#fff";
+
+    if (isNight) {
+      ctx.beginPath();
+      ctx.arc(0, 0, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(20,30,60,0.92)";
+      ctx.beginPath();
+      ctx.arc(4, -3, 8, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4;
+        const x1 = Math.cos(angle) * 10;
+        const y1 = Math.sin(angle) * 10;
+        const x2 = Math.cos(angle) * 14;
+        const y2 = Math.sin(angle) * 14;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
   _drawSpeakerIcon(cx, cy, muted) {
     const ctx = this.ctx;
     ctx.save();
@@ -1062,10 +1167,15 @@ export class Game {
 
   _drawScene() {
     const ctx = this.ctx;
-    ctx.fillStyle = "#4ec0ca";
-    ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    const isNight = this.theme === "night" && images.nightBackground;
 
-    if (images.sky) this._drawTiled(images.sky, CONFIG.SKY_W, CONFIG.SKY_H, this.skyScrollX, CONFIG.HEIGHT - CONFIG.LAND_H - CONFIG.SKY_H);
+    if (isNight) {
+      ctx.drawImage(images.nightBackground, 0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    } else {
+      ctx.fillStyle = CONFIG.THEMES[this.theme];
+      ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+      if (images.sky) this._drawTiled(images.sky, CONFIG.SKY_W, CONFIG.SKY_H, this.skyScrollX, CONFIG.HEIGHT - CONFIG.LAND_H - CONFIG.SKY_H);
+    }
 
     this.pipes.forEach((p) => p.draw(ctx));
     this._drawMeteors(ctx);
