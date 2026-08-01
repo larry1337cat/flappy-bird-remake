@@ -1,8 +1,18 @@
+const AUDIO_SOURCES = {
+  wing: ["audio/wing.ogg", "audio/wing.wav"],
+  point: ["audio/point.ogg", "audio/point.wav"],
+  hit: ["audio/hit.ogg", "audio/hit.wav"],
+  die: ["audio/die.ogg", "audio/die.wav"],
+  swoosh: ["audio/swoosh.ogg", "audio/swoosh.wav"],
+};
+
 class SoundEngine {
   constructor() {
     this.ctx = null;
     this.enabled = true;
     this.muted = false;
+    this.buffers = {};
+    this.ready = this._loadAll();
   }
 
   setMuted(muted) {
@@ -30,37 +40,55 @@ class SoundEngine {
     if (ctx && ctx.state === "suspended") ctx.resume();
   }
 
-  _tone(freq, duration, type, peakGain) {
-    if (!this.enabled || this.muted) return;
+  async _loadAll() {
     const ctx = this._ensureCtx();
     if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(0, ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(peakGain, ctx.currentTime + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
+    await Promise.all(Object.entries(AUDIO_SOURCES).map(([key, srcs]) => this._loadOne(ctx, key, srcs)));
+  }
+
+  async _loadOne(ctx, key, srcs) {
+    for (const src of srcs) {
+      try {
+        const res = await fetch("assets/" + src);
+        const data = await res.arrayBuffer();
+        this.buffers[key] = await ctx.decodeAudioData(data);
+        return;
+      } catch (err) {
+        continue;
+      }
+    }
+    console.warn("Khong tai duoc am thanh:", key);
+  }
+
+  _play(key) {
+    if (!this.enabled || this.muted) return;
+    const ctx = this._ensureCtx();
+    const buffer = this.buffers[key];
+    if (!ctx || !buffer) return;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.start();
   }
 
   flap() {
-    this._tone(520, 0.09, "square", 0.15);
+    this._play("wing");
   }
 
   score() {
-    this._tone(784, 0.08, "square", 0.14);
-    if (!this.enabled || this.muted) return;
-    const ctx = this._ensureCtx();
-    if (!ctx) return;
-    setTimeout(() => this._tone(988, 0.1, "square", 0.14), 60);
+    this._play("point");
   }
 
   hit() {
-    this._tone(120, 0.25, "sawtooth", 0.2);
+    this._play("hit");
+  }
+
+  die() {
+    this._play("die");
+  }
+
+  swoosh() {
+    this._play("swoosh");
   }
 }
 
