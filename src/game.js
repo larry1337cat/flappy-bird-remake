@@ -348,6 +348,7 @@ export class Game {
       frameIndex: 0,
       animTimer: 0,
     });
+    sound.meteor();
   }
 
   _updateMeteors(dt) {
@@ -368,7 +369,7 @@ export class Game {
         m.animTimer = 0;
         m.frameIndex = (m.frameIndex + 1) % 3;
       }
-      if (m.x < -M.SIZE * 2 || m.x > CONFIG.WIDTH + M.SIZE * 2 || m.y > CONFIG.GROUND_Y + M.SIZE) {
+      if (m.y > CONFIG.GROUND_Y + M.SIZE) {
         this.meteors.splice(i, 1);
       }
     }
