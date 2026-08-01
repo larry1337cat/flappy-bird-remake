@@ -339,7 +339,7 @@ export class Game {
   _spawnMeteor() {
     const M = CONFIG.METEOR;
     const speed = M.SPEED_MIN + Math.random() * (M.SPEED_MAX - M.SPEED_MIN);
-    const y = -M.SIZE - Math.random() * 60;
+    const y = -M.SIZE * (0.3 + Math.random() * 3.5);
     this.meteors.push({
       x: CONFIG.WIDTH + M.SIZE,
       y,
