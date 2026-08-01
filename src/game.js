@@ -32,11 +32,14 @@ export class Game {
     this.save = loadSave();
     this.mode = MODES[this.save.mode] ? this.save.mode : MODES.NORMAL;
     this.lang = resolveLang(this.save.lang);
+    this.skin = CONFIG.SKINS[this.save.skin] ? this.save.skin : "yellow";
     sound.setMuted(this.save.muted === true);
     this.menuButtons = this._buildMenuButtons();
     this.changeModeRect = { x: CONFIG.WIDTH / 2 - 100, y: CONFIG.HEIGHT / 2 + 70, w: 200, h: 40 };
     this.langToggleRect = { x: CONFIG.WIDTH - 74, y: 16, w: 58, h: 34 };
-    this.muteRect = { x: 16, y: 16, w: 40, h: 40 };
+    this.settingsRect = { x: 16, y: 16, w: 40, h: 40 };
+    this.settingsOpen = false;
+    this.settingsLayout = this._buildSettingsLayout();
     this.githubRect = { x: CONFIG.WIDTH / 2 - 66, y: 16, w: 132, h: 34 };
     this.medalGradients = new Map();
     this.pressFx = null;
@@ -66,8 +69,32 @@ export class Game {
     }));
   }
 
+  _buildSettingsLayout() {
+    const panelW = 280;
+    const panelH = 300;
+    const panel = { x: CONFIG.WIDTH / 2 - panelW / 2, y: CONFIG.HEIGHT / 2 - panelH / 2, w: panelW, h: panelH };
+    const close = { x: panel.x + panelW - 40, y: panel.y + 12, w: 28, h: 28 };
+    const soundToggle = { x: panel.x + panelW / 2 - 70, y: panel.y + 74, w: 140, h: 44 };
+
+    const skinIds = Object.keys(CONFIG.SKINS);
+    const swatchSize = 70;
+    const swatchGap = 14;
+    const totalW = skinIds.length * swatchSize + (skinIds.length - 1) * swatchGap;
+    const startX = panel.x + (panelW - totalW) / 2;
+    const skinY = panel.y + 176;
+    const skins = skinIds.map((skin, i) => ({
+      skin,
+      x: startX + i * (swatchSize + swatchGap),
+      y: skinY,
+      w: swatchSize,
+      h: swatchSize,
+    }));
+
+    return { panel, close, soundToggle, skins };
+  }
+
   _reset() {
-    this.bird = new Bird(CONFIG.BIRD_START_X, CONFIG.HEIGHT / 2 - CONFIG.BIRD_H / 2);
+    this.bird = new Bird(CONFIG.BIRD_START_X, CONFIG.HEIGHT / 2 - CONFIG.BIRD_H / 2, CONFIG.SKINS[this.skin]);
     this.pipes.forEach((p) => this.pipePool.release(p));
     this.pipes.length = 0;
     this.pipeTimer = 0;
@@ -122,6 +149,19 @@ export class Game {
   };
 
   update(dt) {
+    if (this.input.flapQueued && this._hitButton(this.settingsRect, this.input.pointer)) {
+      this.input.consumeFlap();
+      this.settingsOpen = !this.settingsOpen;
+      if (this.settingsOpen) sound.unlock();
+      this.pressFx = { rect: this.settingsRect, time: this.lastTime };
+      return;
+    }
+
+    if (this.settingsOpen) {
+      this._updateSettingsOverlay();
+      return;
+    }
+
     if (this.shakeTime > 0) this.shakeTime = Math.max(0, this.shakeTime - dt);
     switch (this.state) {
       case STATE.MENU:
@@ -443,12 +483,25 @@ export class Game {
     return !!p && p.x >= rect.x && p.x <= rect.x + rect.w && p.y >= rect.y && p.y <= rect.y + rect.h;
   }
 
-  _consumeMuteTap() {
-    if (!this.input.flapQueued) return false;
-    if (!this._hitButton(this.muteRect, this.input.pointer)) return false;
-    this.input.consumeFlap();
-    this._toggleMute();
-    return true;
+  _updateSettingsOverlay() {
+    if (!this.input.consumeFlap()) return;
+    const p = this.input.pointer;
+    const { panel, close, soundToggle, skins } = this.settingsLayout;
+
+    if (this._hitButton(close, p)) {
+      this.settingsOpen = false;
+      return;
+    }
+    if (this._hitButton(soundToggle, p)) {
+      this._toggleMute();
+      return;
+    }
+    const hitSkin = skins.find((s) => this._hitButton(s, p));
+    if (hitSkin) {
+      this._selectSkin(hitSkin.skin);
+      return;
+    }
+    if (!this._hitButton(panel, p)) this.settingsOpen = false;
   }
 
   _toggleMute() {
@@ -456,13 +509,20 @@ export class Game {
     const muted = sound.toggleMute();
     this.save.muted = muted;
     writeSave(this.save);
-    this.pressFx = { rect: this.muteRect, time: this.lastTime };
+    this.pressFx = { rect: this.settingsLayout.soundToggle, time: this.lastTime };
+  }
+
+  _selectSkin(skinId) {
+    if (skinId === this.skin) return;
+    this.skin = skinId;
+    this.bird.frames = CONFIG.SKINS[skinId];
+    this.save.skin = skinId;
+    writeSave(this.save);
   }
 
   _updateMenu(dt) {
     this._scrollBackdrop(dt);
     this.bird.updateAnim(dt);
-    if (this._consumeMuteTap()) return;
     if (this.input.consumeFlap()) {
       const p = this.input.pointer;
 
@@ -496,7 +556,6 @@ export class Game {
   _updateReady(dt) {
     this._scrollBackdrop(dt);
     this.bird.updateAnim(dt);
-    if (this._consumeMuteTap()) return;
     if (this.input.consumeFlap()) {
       if (this._hitButton(this.changeModeRect, this.input.pointer)) {
         this.pressFx = { rect: this.changeModeRect, time: this.lastTime };
@@ -516,7 +575,6 @@ export class Game {
     this._scrollBackdrop(dt);
     this.playTime += dt;
 
-    if (this._consumeMuteTap()) return;
     if (this.input.consumeFlap()) {
       this.bird.flap();
       sound.flap();
@@ -602,7 +660,6 @@ export class Game {
 
   _updateGameover(dt) {
     this.gameOverTimer += dt;
-    if (this._consumeMuteTap()) return;
     if (this.gameOverTimer >= CONFIG.RESTART_DELAY && this.input.consumeFlap()) {
       this._reset();
       this.state = STATE.READY;
@@ -641,7 +698,8 @@ export class Game {
     if (this.state === STATE.MENU) this._drawMenu();
     if (this.state === STATE.READY) this._drawReady();
     if (this.state === STATE.GAMEOVER) this._drawGameover();
-    this._drawMuteButton();
+    this._drawSettingsButton();
+    if (this.settingsOpen) this._drawSettingsPanel();
   }
 
   _drawLightningFlash(ctx) {
@@ -758,9 +816,9 @@ export class Game {
     ctx.restore();
   }
 
-  _drawMuteButton() {
+  _drawSettingsButton() {
     const ctx = this.ctx;
-    const rect = this.muteRect;
+    const rect = this.settingsRect;
     const scale = this._pressScale(rect);
     const cx = rect.x + rect.w / 2;
     const cy = rect.y + rect.h / 2;
@@ -770,8 +828,118 @@ export class Game {
     ctx.scale(scale, scale);
     ctx.translate(-cx, -cy);
     drawRoundedPanel(ctx, rect.x, rect.y, rect.w, rect.h, 8, "rgba(0,0,0,0.4)", "rgba(255,255,255,0.7)", 2);
-    this._drawSpeakerIcon(cx, cy, sound.muted);
+    this._drawGearIcon(cx, cy, 10);
     ctx.restore();
+  }
+
+  _drawGearIcon(cx, cy, r) {
+    const ctx = this.ctx;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = "#fff";
+
+    const teeth = 8;
+    const toothW = r * 0.55;
+    const toothH = r * 0.6;
+    for (let i = 0; i < teeth; i++) {
+      ctx.save();
+      ctx.rotate((Math.PI * 2 * i) / teeth);
+      ctx.fillRect(-toothW / 2, -r - toothH * 0.3, toothW, toothH);
+      ctx.restore();
+    }
+
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.85, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#2b2b2b";
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  _drawSettingsPanel() {
+    const ctx = this.ctx;
+    const strings = tr(this.lang);
+    const { panel, close, soundToggle, skins } = this.settingsLayout;
+
+    this._drawDim(0.55);
+    drawRoundedPanel(ctx, panel.x, panel.y, panel.w, panel.h, 16, "rgba(20,24,40,0.95)", "rgba(255,255,255,0.7)", 2);
+    drawTextOutlined(ctx, strings.settings, panel.x + panel.w / 2, panel.y + 32, { size: 20 });
+    this._drawCloseButton(close);
+
+    drawText(ctx, strings.sound, panel.x + panel.w / 2, panel.y + 70, { size: 14, color: "#cfd8e3" });
+    this._drawSoundToggle(soundToggle, strings);
+
+    drawText(ctx, strings.birdSkin, panel.x + panel.w / 2, panel.y + 150, { size: 14, color: "#cfd8e3" });
+    skins.forEach((s) => this._drawSkinSwatch(s));
+  }
+
+  _drawCloseButton(rect) {
+    const ctx = this.ctx;
+    const cx = rect.x + rect.w / 2;
+    const cy = rect.y + rect.h / 2;
+    drawRoundedPanel(ctx, rect.x, rect.y, rect.w, rect.h, 6, "rgba(0,0,0,0.4)", "rgba(255,255,255,0.6)", 1.5);
+    drawText(ctx, "×", cx, cy + 1, { size: 20, color: "#fff" });
+  }
+
+  _drawSoundToggle(rect, strings) {
+    const ctx = this.ctx;
+    const scale = this._pressScale(rect);
+    const cx = rect.x + rect.w / 2;
+    const cy = rect.y + rect.h / 2;
+    const muted = sound.muted;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.translate(-cx, -cy);
+    drawRoundedPanel(
+      ctx,
+      rect.x,
+      rect.y,
+      rect.w,
+      rect.h,
+      10,
+      muted ? "rgba(0,0,0,0.4)" : "rgba(255,224,102,0.92)",
+      "rgba(255,255,255,0.7)",
+      2
+    );
+    this._drawSpeakerIcon(cx - 30, cy, muted);
+    drawText(ctx, muted ? strings.soundOff : strings.soundOn, cx + 16, cy, {
+      size: 14,
+      color: muted ? "#fff" : "#3a2a00",
+    });
+    ctx.restore();
+  }
+
+  _drawSkinSwatch(rect) {
+    const ctx = this.ctx;
+    const selected = rect.skin === this.skin;
+    drawRoundedPanel(
+      ctx,
+      rect.x,
+      rect.y,
+      rect.w,
+      rect.h,
+      10,
+      "rgba(0,0,0,0.35)",
+      selected ? "#ffe066" : "rgba(255,255,255,0.5)",
+      selected ? 3 : 2
+    );
+    const frames = CONFIG.SKINS[rect.skin];
+    const img = images[frames[1]];
+    if (img) {
+      ctx.drawImage(
+        img,
+        rect.x + rect.w / 2 - CONFIG.BIRD_W / 2,
+        rect.y + rect.h / 2 - CONFIG.BIRD_H / 2,
+        CONFIG.BIRD_W,
+        CONFIG.BIRD_H
+      );
+    }
   }
 
   _drawSpeakerIcon(cx, cy, muted) {
