@@ -20,7 +20,6 @@ export const CONFIG = {
   ROTATE_UP_DEG: -20,
   ROTATE_DOWN_DEG: 90,
   WING_FLIP_MS: 90,
-  BIRD_FRAMES: ["bird1", "bird2", "bird3", "bird2"],
 
   PIPE_W: 65,
   PIPE_H: 344,
@@ -154,6 +153,12 @@ export const CONFIG = {
 
 CONFIG.GROUND_Y = CONFIG.HEIGHT - CONFIG.LAND_H;
 
+CONFIG.SKINS = {
+  yellow: ["bird1", "bird2", "bird3", "bird2"],
+  red: ["birdRedDown", "birdRedMid", "birdRedUp", "birdRedMid"],
+  blue: ["birdBlueDown", "birdBlueMid", "birdBlueUp", "birdBlueMid"],
+};
+
 export const MODES = {
   EASY: "EASY",
   NORMAL: "NORMAL",
@@ -178,5 +183,11 @@ export const IMAGE_MANIFEST = {
   bird1: "images/bird1.png",
   bird2: "images/bird2.png",
   bird3: "images/bird3.png",
+  birdRedDown: "images/bird_red_down.png",
+  birdRedMid: "images/bird_red_mid.png",
+  birdRedUp: "images/bird_red_up.png",
+  birdBlueDown: "images/bird_blue_down.png",
+  birdBlueMid: "images/bird_blue_mid.png",
+  birdBlueUp: "images/bird_blue_up.png",
   scoreboard: "images/scoreboard.png",
 };
