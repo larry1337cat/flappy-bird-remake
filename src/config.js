@@ -200,7 +200,7 @@ export const IMAGE_MANIFEST = {
   birdBlueMid: "images/bird_blue_mid.png",
   birdBlueUp: "images/bird_blue_up.png",
   scoreboard: "images/scoreboard.png",
-  meteor1: "images/meteor1.png",
-  meteor2: "images/meteor2.png",
-  meteor3: "images/meteor3.png",
+  meteor1: "images/Meteor1.png",
+  meteor2: "images/Meteor2.png",
+  meteor3: "images/Meteor3.png",
 };
