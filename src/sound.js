@@ -4,6 +4,7 @@ const AUDIO_SOURCES = {
   hit: ["audio/hit.ogg", "audio/hit.wav"],
   die: ["audio/die.ogg", "audio/die.wav"],
   swoosh: ["audio/swoosh.ogg", "audio/swoosh.wav"],
+  meteor: ["audio/meteor.mp3"],
 };
 
 class SoundEngine {
@@ -89,6 +90,10 @@ class SoundEngine {
 
   swoosh() {
     this._play("swoosh");
+  }
+
+  meteor() {
+    this._play("meteor");
   }
 }
 
