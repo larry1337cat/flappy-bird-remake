@@ -2,6 +2,7 @@ import { CONFIG } from "./config.js";
 import { preloadAll } from "./assetLoader.js";
 import { Game } from "./game.js";
 import { watchForUpdates } from "./updateNotifier.js";
+import { sound } from "./sound.js";
 
 const canvas = document.getElementById("game");
 canvas.width = CONFIG.WIDTH;
@@ -26,7 +27,7 @@ function loadFonts() {
 
 async function boot() {
   setProgress(0);
-  await Promise.all([preloadAll(setProgress), loadFonts()]);
+  await Promise.all([preloadAll(setProgress), loadFonts(), sound.ready]);
 
   const game = new Game(canvas);
   requestAnimationFrame(game.loop);
