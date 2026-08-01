@@ -4,7 +4,7 @@ import { CONFIG } from "./config.js";
 const V = CONFIG.PIPE_VARIANTS;
 
 export class Bird {
-  constructor(x, y) {
+  constructor(x, y, frames) {
     this.x = x;
     this.y = y;
     this.w = CONFIG.BIRD_W;
@@ -13,6 +13,7 @@ export class Bird {
     this.vx = 0;
     this.baseX = x;
     this.rotation = 0;
+    this.frames = frames;
     this.frameIndex = 0;
     this.animTimer = 0;
   }
@@ -60,12 +61,12 @@ export class Bird {
     this.animTimer += dt;
     if (this.animTimer >= CONFIG.WING_FLIP_MS) {
       this.animTimer = 0;
-      this.frameIndex = (this.frameIndex + 1) % CONFIG.BIRD_FRAMES.length;
+      this.frameIndex = (this.frameIndex + 1) % this.frames.length;
     }
   }
 
   get imgKey() {
-    return CONFIG.BIRD_FRAMES[this.frameIndex];
+    return this.frames[this.frameIndex];
   }
 
   draw(ctx) {
