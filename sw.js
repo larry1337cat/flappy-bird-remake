@@ -1,4 +1,4 @@
-const CACHE_NAME = "flappy-bird-remake-v7.1";
+const CACHE_NAME = "flappy-bird-remake-v7.2";
 
 const PRECACHE_URLS = [
   "./",
