@@ -36,6 +36,9 @@ const STRINGS = {
     soundOn: "BẬT",
     soundOff: "TẮT",
     birdSkin: "MÀU CHIM",
+    theme: "GIAO DIỆN",
+    themeDay: "NGÀY",
+    themeNight: "ĐÊM",
   },
   [LANG.EN]: {
     modeLabels: {
@@ -67,6 +70,9 @@ const STRINGS = {
     soundOn: "ON",
     soundOff: "OFF",
     birdSkin: "BIRD SKIN",
+    theme: "THEME",
+    themeDay: "DAY",
+    themeNight: "NIGHT",
   },
 };
 
