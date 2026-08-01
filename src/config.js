@@ -121,8 +121,8 @@ export const CONFIG = {
 
   METEOR: {
     SIZE: 72,
-    SPEED_MIN: 1.3,
-    SPEED_MAX: 1.9,
+    SPEED_MIN: 1.1,
+    SPEED_MAX: 1.7,
     INTERVAL_MIN: 1800,
     INTERVAL_MAX: 5200,
     ANIM_MS: 70,
